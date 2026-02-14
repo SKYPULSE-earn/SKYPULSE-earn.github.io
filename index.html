@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SkyPulse</title>
+  <style>
+    :root{
+      --bg:#0a0e27;
+      --panel:#1a1f3a;
+      --panel2: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.12);
+      --text:#f0f4f8;
+      --muted:#8b92a9;
+      --primary:#3b82f6;
+      --success:#10b981;
+      --warning:#f59e0b;
+      --danger:#ef4444;
+      --shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,sans-serif}
+    body{
+      background-image:
+        radial-gradient(700px 420px at 20% 10%, rgba(59,130,246,0.16), transparent 55%),
+        radial-gradient(700px 420px at 80% 90%, rgba(16,185,129,0.12), transparent 55%);
+      overflow-x:hidden;
+    }
+
+    .wrap{width:min(1020px, 96vw); margin:14px auto 60px; padding:0 2px;}
+    .app{display:grid; grid-template-columns: 1fr 330px; gap:16px; align-items:start;}
+    @media (max-width: 940px){ .app{grid-template-columns:1fr} .right{order:-1} }
+
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    /* Header / HUD */
+    .game-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 14px; background:rgba(0,0,0,.14);
+      border-bottom:1px solid var(--border);
+      gap:12px;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:950;letter-spacing:-0.6px;min-width: 140px;user-select:none;}
+    .brand .logo{font-size:18px}
+    .brand .name{font-size:15px}
+    .hud{
+      display:flex;align-items:center;gap:10px;
+      font-size:12px;color:var(--muted);font-weight:850;
+      flex-wrap:wrap; justify-content:flex-end;
+    }
+    .pill{
+      padding:6px 10px;border-radius:999px;background:var(--panel2);
+      border:1px solid var(--border); color:var(--text);
+      white-space:nowrap; user-select:none;
+    }
+    .btn-icon{
+      width:38px;height:38px;border-radius:12px;
+      border:1px solid var(--border);background:var(--panel2);
+      color:var(--text);cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:.15s;font-size:16px; user-select:none;
+    }
+    .btn-icon:hover{transform:translateY(-1px);background:rgba(255,255,255,.09)}
+
+    .canvas-wrap{position:relative; display:flex;align-items:center;justify-content:center; padding:14px;}
+    canvas{
+      width:100%; height:auto; aspect-ratio: 16 / 10;
+      max-height:560px; border-radius:14px;
+      background: linear-gradient(180deg, rgba(59,130,246,.18), rgba(16,185,129,.10));
+      border:1px solid var(--border);
+      display:block; touch-action: manipulation;
+    }
+
+    .overlay{position:absolute;inset:14px; display:flex;align-items:center;justify-content:center; pointer-events:none;}
+    .overlay .panel{
+      pointer-events:none;
+      width:min(520px, 94%);
+      text-align:center;
+      background:rgba(10,14,39,.86);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:18px 16px;
+      backdrop-filter: blur(10px);
+    }
+    .title{font-size:18px;font-weight:950;margin-bottom:8px}
+    .subtitle{font-size:13px;color:var(--muted);line-height:1.4}
+    .kbd{display:inline-flex;gap:8px;align-items:center;justify-content:center;margin-top:12px;font-size:12px;color:var(--muted)}
+    .kbd span{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      border-radius:10px;
+      padding:6px 10px;
+      color:var(--text);
+      font-weight:950;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    /* Right panel */
+    .right{display:flex;flex-direction:column;gap:12px}
+    .panel-title{
+      padding:12px 14px;
+      font-size:12px;font-weight:950;letter-spacing:1px;text-transform:uppercase;
+      color:var(--muted);
+      border-bottom:1px solid var(--border);
+      background:rgba(0,0,0,.12);
+    }
+    .panel-body{padding:14px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+    .row:last-child{border-bottom:none}
+    .label{font-size:13px;font-weight:950}
+    .value{font-size:12px;color:var(--muted);font-weight:850}
+
+    .btn{
+      width:100%;
+      border:0;
+      border-radius:12px;
+      background:linear-gradient(135deg,var(--primary),#1d4ed8);
+      color:white;
+      font-weight:950;
+      padding:12px 14px;
+      cursor:pointer;
+      transition:.15s;
+      display:flex;align-items:center;justify-content:center;gap:10px;
+      user-select:none;
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(59,130,246,.35)}
+    .btn.secondary{
+      background:var(--panel2);
+      border:1px solid var(--border);
+      color:var(--text);
+      box-shadow:none;
+    }
+    .btn.secondary:hover{background:rgba(255,255,255,.09);transform:translateY(-1px)}
+    .small{font-size:12px;color:var(--muted);line-height:1.45;margin-top:10px}
+    .chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.05);
+      font-size:12px;font-weight:900;color:var(--text);
+      cursor:pointer;transition:.15s;user-select:none;
+    }
+    .chip:hover{background:rgba(255,255,255,.08);transform:translateY(-1px)}
+    .chip.on{border-color:rgba(16,185,129,.45); background:rgba(16,185,129,.12)}
+    .chip.warn{border-color:rgba(245,158,11,.45); background:rgba(245,158,11,.10)}
+
+    /* Legal accordion */
+    .legal{margin-top:16px; display:grid; grid-template-columns: 1fr; gap:12px;}
+    details.legal-item{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    details.legal-item summary{
+      list-style:none;
+      cursor:pointer;
+      padding:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      user-select:none;
+      background:rgba(0,0,0,.12);
+      border-bottom:1px solid transparent;
+      font-weight:950;
+      font-size:13px;
+    }
+    details.legal-item[open] summary{
+      border-bottom-color: var(--border);
+    }
+    details.legal-item summary::-webkit-details-marker{display:none}
+    .chev{
+      width:28px;height:28px;border-radius:10px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.05);
+      display:flex;align-items:center;justify-content:center;
+      color:var(--muted);
+      transition:.15s;
+      flex:0 0 auto;
+    }
+    details[open] .chev{transform:rotate(90deg); color:var(--text); background:rgba(255,255,255,.08)}
+    .legal-body{padding:14px}
+    .legal-body p, .legal-body li{font-size:12.5px;color:var(--muted);line-height:1.55}
+    .legal-body ul{padding-left:18px;margin:8px 0}
+
+    .footnote{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      padding: 0 4px;
+    }
+
+    /* Modal */
+    .modal{
+      position:fixed;inset:0;
+      display:none;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      z-index:1000;
+      padding:16px;
+    }
+    .modal.show{display:flex}
+    .modal-card{
+      width:min(820px, 96vw);
+      max-height: min(86vh, 720px);
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .modal-head{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 14px;
+      border-bottom:1px solid var(--border);
+      background:rgba(0,0,0,.14);
+      user-select:none;
+    }
+    .tabs{
+      display:flex;gap:6px;
+      padding:10px 14px;
+      border-bottom:1px solid var(--border);
+      background:rgba(255,255,255,.03);
+      flex-wrap:wrap;
+    }
+    .tab{
+      padding:8px 10px;border-radius:10px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.05);
+      color:var(--muted);
+      font-weight:950;font-size:12px;
+      cursor:pointer;
+      transition:.15s;
+      user-select:none;
+    }
+    .tab.active{
+      background:rgba(59,130,246,.18);
+      color:var(--text);
+      border-color:rgba(59,130,246,.35);
+    }
+    .modal-body{padding:14px; overflow:auto;}
+    .section{display:none}
+    .section.active{display:block}
+    .hr{height:1px;background:var(--border);margin:12px 0}
+    .toggle{
+      width:48px;height:26px;border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.06);
+      position:relative;cursor:pointer;transition:.15s;
+      flex:0 0 auto;
+      user-select:none;
+    }
+    .toggle::after{
+      content:"";
+      position:absolute;top:2px;left:2px;
+      width:22px;height:22px;border-radius:50%;
+      background:white;transition:.15s;
+    }
+    .toggle.on{background:rgba(59,130,246,.35);border-color:rgba(59,130,246,.55)}
+    .toggle.on::after{left:24px}
+    .select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.25);
+      color:var(--text);
+      font-weight:950;
+      outline:none;
+    }
+
+    /* Store */
+    .store-grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+    .skin{
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.05);
+      border-radius:14px;
+      padding:10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .skin-left{display:flex;gap:10px;align-items:center}
+    .swatch{
+      width:34px;height:34px;border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.08);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:950;
+      user-select:none;
+    }
+    .skin-meta b{display:block;font-size:12px}
+    .skin-meta span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+    .skin-btn{
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      border-radius:12px;
+      padding:8px 10px;
+      font-weight:950;
+      cursor:pointer;
+      transition:.15s;
+      user-select:none;
+      white-space:nowrap;
+      font-size:12px;
+    }
+    .skin-btn:hover{background:rgba(255,255,255,.08);transform:translateY(-1px)}
+    .skin-btn.primary{
+      border-color:rgba(59,130,246,.45);
+      background:rgba(59,130,246,.16);
+    }
+    .skin-btn.locked{opacity:.55; cursor:not-allowed}
+
+    .earnpro-box{
+      border:1px solid rgba(59,130,246,.35);
+      background:rgba(59,130,246,.12);
+      border-radius:14px;
+      padding:12px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      margin-top:12px;
+    }
+    .earnpro-box .left{display:flex;flex-direction:column;gap:4px;}
+    .earnpro-box .left b{font-size:13px}
+    .earnpro-box .left span{font-size:12px;color:var(--muted);line-height:1.3}
+    .earnpro-btn{
+      padding:10px 12px;border-radius:12px;border:0;
+      background:linear-gradient(135deg,var(--primary),#1d4ed8);
+      color:white;font-weight:950;cursor:pointer;white-space:nowrap;
+      transition:.15s;
+      user-select:none;
+    }
+    .earnpro-btn:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(59,130,246,.25)}
+    .earnpro-hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="app">
+      <!-- Game -->
+      <div class="card">
+        <div class="game-header">
+          <div class="brand">
+            <span class="logo">⚡</span>
+            <span class="name">SkyPulse</span>
+          </div>
+
+          <div class="hud">
+            <span class="pill">Score: <span id="score">0</span></span>
+            <span class="pill">Best: <span id="best">0</span></span>
+            <span class="pill">Stars: <span id="stars">0</span></span>
+            <span class="pill">Skin: <span id="skinName">Classic</span></span>
+            <button class="btn-icon" id="settingsBtn" title="Settings">⚙️</button>
+          </div>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="game" width="900" height="560"></canvas>
+          <div class="overlay" id="overlay">
+            <div class="panel">
+              <div class="title" id="overlayTitle">Tap to start</div>
+              <div class="subtitle" id="overlaySubtitle">
+                Fly through the gates. Don’t hit the pipes or the ground.
+              </div>
+              <div class="kbd">
+                <span>Space</span> <span>Click</span> <span>Tap</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="right">
+        <div class="card">
+          <div class="panel-title">Quick Controls</div>
+          <div class="panel-body">
+            <button class="btn" id="playBtn">▶️ Play / Restart</button>
+            <div style="height:10px"></div>
+            <button class="btn secondary" id="pauseBtn">⏸️ Pause</button>
+
+            <div class="chiprow">
+              <div class="chip on" id="soundChip">🔊 Sound</div>
+              <div class="chip" id="hapticsChip">📳 Haptics</div>
+              <div class="chip warn" id="practiceChip">🧪 Practice</div>
+            </div>
+
+            <div class="small">
+              +1 score per gate. Stars unlock skins in the Store.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="panel-title">Stats</div>
+          <div class="panel-body">
+            <div class="row">
+              <div class="label">Gates passed</div>
+              <div class="value"><span id="pipesPassed">0</span></div>
+            </div>
+            <div class="row">
+              <div class="label">Attempts</div>
+              <div class="value"><span id="attempts">0</span></div>
+            </div>
+            <div class="row">
+              <div class="label">Mode</div>
+              <div class="value"><span id="modeLabel">Normal</span></div>
+            </div>
+            <div class="row">
+              <div class="label">Speed</div>
+              <div class="value"><span id="speed">1.0x</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom: small, expandable legal sections -->
+    <div class="legal">
+      <details class="legal-item" id="about">
+        <summary>
+          <span>About</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="legal-body">
+          <p><b style="color:var(--text)">SkyPulse</b> is a lightweight browser game built for quick sessions.</p>
+          <ul>
+            <li>Press Space / click / tap to boost.</li>
+            <li>Avoid pipes and the ground.</li>
+            <li>Earn Stars as you progress and unlock skins in the Store.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="legal-item" id="privacy">
+        <summary>
+          <span>Privacy Policy</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="legal-body">
+          <p>SkyPulse keeps data collection minimal.</p>
+          <ul>
+            <li>We store gameplay stats and settings locally using <b>localStorage</b> (best score, attempts, stars, skin choice).</li>
+            <li>No login is required to play.</li>
+            <li>We do not sell personal data.</li>
+          </ul>
+          <p>This policy may be updated as features expand.</p>
+        </div>
+      </details>
+
+      <details class="legal-item" id="terms">
+        <summary>
+          <span>Terms of Service</span>
+          <span class="chev">›</span>
+        </summary>
+        <div class="legal-body">
+          <p>By using SkyPulse, you agree to these terms:</p>
+          <ul>
+            <li>Use the site for lawful purposes only.</li>
+            <li>Do not attempt to disrupt, exploit, or reverse engineer the site.</li>
+            <li>The game is provided “as is” and may change over time.</li>
+            <li>We are not liable for losses or damages from use or inability to use the site.</li>
+          </ul>
+        </div>
+      </details>
+
+      <div class="footnote">
+        <span>© <span id="year"></span> SkyPulse</span>
+        <span style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a href="#about" style="color:var(--text);font-weight:900;text-decoration:none;">About</a>
+          <a href="#privacy" style="color:var(--text);font-weight:900;text-decoration:none;">Privacy</a>
+          <a href="#terms" style="color:var(--text);font-weight:900;text-decoration:none;">Terms</a>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="modal" id="settingsModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="brand" id="settingsBrand">
+          <span class="logo">⚙️</span>
+          <span class="name">Settings</span>
+        </div>
+        <button class="btn-icon" id="closeSettings" title="Close">✕</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="gameplay">Gameplay</button>
+        <button class="tab" data-tab="store">Store</button>
+        <button class="tab" data-tab="more" id="moreTabBtn">More</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="section active" id="tab-gameplay">
+          <div class="row">
+            <div>
+              <div class="label">Hard Mode</div>
+              <div class="value">Smaller gaps + faster pipes</div>
+            </div>
+            <div class="toggle" id="hardToggle" role="switch" aria-checked="false"></div>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="label">Style</div>
+              <div class="value">Clean or neon</div>
+            </div>
+            <select class="select" id="gfxSelect" style="max-width: 220px;">
+              <option value="clean" selected>Clean</option>
+              <option value="neon">Neon</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="label">Difficulty curve</div>
+              <div class="value">Speed increases with score</div>
+            </div>
+            <div class="toggle on" id="curveToggle" role="switch" aria-checked="true"></div>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="label">Current Skin</div>
+              <div class="value"><span id="modalSkinName">Classic</span></div>
+            </div>
+            <button class="skin-btn primary" id="openStoreBtn">Open Store</button>
+          </div>
+        </div>
+
+        <div class="section" id="tab-store">
+          <div class="row" style="border-bottom:none; padding-bottom:0;">
+            <div>
+              <div class="label">Store</div>
+              <div class="value">Unlock skins using Stars</div>
+            </div>
+            <div class="pill">Stars: <span id="storeStars">0</span></div>
+          </div>
+
+          <div class="store-grid" id="storeGrid"></div>
+
+          <div class="small" style="margin-top:12px;">
+            Skins unlock automatically when your Stars reach the requirement.
+          </div>
+        </div>
+
+        <div class="section" id="tab-more">
+          <div class="card" style="box-shadow:none; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:14px; padding:12px;">
+            <div class="label">Contact</div>
+            <div class="small" style="margin-top:6px;">Support: <a href="mailto:guevara.hijazi0@gmail.com" style="color:var(--text);font-weight:950;text-decoration:none;">guevara.hijazi0@gmail.com</a></div>
+          </div>
+
+          <!-- Hidden option (appears after 5 taps on "More") -->
+          <div class="earnpro-box earnpro-hidden" id="earnproBox">
+            <div class="left">
+              <b>EarnPro</b>
+              <span>Open (login required).</span>
+            </div>
+            <button class="earnpro-btn" id="earnproBtn">Open</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------
+    // Storage
+    // -------------------------
+    const STORE_KEY = 'skypulse:v5';
+    const store = {
+      load(){ try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch { return {}; } },
+      save(v){ localStorage.setItem(STORE_KEY, JSON.stringify(v)); }
+    };
+    const saved = store.load();
+
+    // -------------------------
+    // UI refs
+    // -------------------------
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const starsEl = document.getElementById('stars');
+    const skinNameEl = document.getElementById('skinName');
+
+    const speedEl = document.getElementById('speed');
+    const pipesPassedEl = document.getElementById('pipesPassed');
+    const attemptsEl = document.getElementById('attempts');
+    const modeLabelEl = document.getElementById('modeLabel');
+
+    const overlay = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlaySubtitle = document.getElementById('overlaySubtitle');
+
+    const yearEls = document.querySelectorAll('#year');
+    yearEls.forEach(el => el.textContent = new Date().getFullYear());
+
+    // Settings modal
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettings = document.getElementById('closeSettings');
+
+    const tabs = Array.from(document.querySelectorAll('.tab'));
+    const sections = {
+      gameplay: document.getElementById('tab-gameplay'),
+      store: document.getElementById('tab-store'),
+      more: document.getElementById('tab-more')
+    };
+
+    const hardToggle = document.getElementById('hardToggle');
+    const curveToggle = document.getElementById('curveToggle');
+    const gfxSelect = document.getElementById('gfxSelect');
+
+    const openStoreBtn = document.getElementById('openStoreBtn');
+    const modalSkinName = document.getElementById('modalSkinName');
+
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const soundChip = document.getElementById('soundChip');
+    const hapticsChip = document.getElementById('hapticsChip');
+    const practiceChip = document.getElementById('practiceChip');
+
+    const storeGrid = document.getElementById('storeGrid');
+    const storeStars = document.getElementById('storeStars');
+
+    const earnproBox = document.getElementById('earnproBox');
+    const earnproBtn = document.getElementById('earnproBtn');
+
+    const moreTabBtn = document.getElementById('moreTabBtn');
+
+    // -------------------------
+    // Settings state
+    // -------------------------
+    const settings = {
+      hard: !!saved.hard,
+      gfx: saved.gfx || 'clean',
+      curve: (saved.curve ?? true) === true,
+      sound: (saved.sound ?? true) === true,
+      haptics: !!saved.haptics,
+      practice: !!saved.practice,
+    };
+
+    // -------------------------
+    // Skins / Store
+    // -------------------------
+    const SKINS = [
+      { id: 'classic', name: 'Classic', emoji: '⚪', cost: 0,   bird: { body: 'rgba(240,244,248,0.92)', beak: 'rgba(239,68,68,0.95)' } },
+      { id: 'ember',   name: 'Ember',   emoji: '🔥', cost: 25,  bird: { body: 'rgba(245,158,11,0.95)',  beak: 'rgba(239,68,68,0.95)' } },
+      { id: 'neon',    name: 'Neon',    emoji: '💠', cost: 60,  bird: { body: 'rgba(59,130,246,0.95)',   beak: 'rgba(16,185,129,0.95)' } },
+      { id: 'mint',    name: 'Mint',    emoji: '🌿', cost: 110, bird: { body: 'rgba(16,185,129,0.92)',   beak: 'rgba(245,158,11,0.95)' } },
+      { id: 'royal',   name: 'Royal',   emoji: '👑', cost: 180, bird: { body: 'rgba(139,92,246,0.92)',   beak: 'rgba(59,130,246,0.95)' } },
+    ];
+
+    let stars = Number(saved.stars || 0);
+    let selectedSkin = saved.skin || 'classic';
+
+    function skinById(id){ return SKINS.find(s => s.id === id) || SKINS[0]; }
+
+    // -------------------------
+    // Secret unlock: 5 taps on More (WORKING)
+    // -------------------------
+    let earnproUnlocked = !!saved.earnproUnlocked;
+    let moreTapCount = 0;
+    let moreTapResetTimer = null;
+
+    function revealEarnPro(){
+      if (earnproUnlocked) return;
+      earnproUnlocked = true;
+      earnproBox.classList.remove('earnpro-hidden');
+      persist();
+      // silent (no UI text)
+      beep(880, 0.05, 'sine', 0.03);
+      beep(1040, 0.05, 'sine', 0.03);
+      vibrate(25);
+    }
+
+    function handleMoreTap(){
+      // Count taps only when the modal is open and More tab is pressed
+      if (!settingsModal.classList.contains('show')) return;
+
+      moreTapCount++;
+      clearTimeout(moreTapResetTimer);
+      moreTapResetTimer = setTimeout(() => { moreTapCount = 0; }, 2000);
+
+      if (moreTapCount >= 5){
+        moreTapCount = 0;
+        revealEarnPro();
+      }
+    }
+
+    // -------------------------
+    // Audio / Haptics
+    // -------------------------
+    function vibrate(ms){
+      if (!settings.haptics) return;
+      try{ navigator.vibrate?.(ms); } catch {}
+    }
+    let audioCtx = null;
+    function beep(freq=640, dur=0.05, type='sine', gain=0.03){
+      if (!settings.sound) return;
+      try{
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = gain;
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        o.start();
+        setTimeout(() => { o.stop(); }, Math.max(10, dur*1000));
+      } catch {}
+    }
+
+    function persist(){
+      store.save({
+        ...store.load(),
+        hard: settings.hard,
+        gfx: settings.gfx,
+        curve: settings.curve,
+        sound: settings.sound,
+        haptics: settings.haptics,
+        practice: settings.practice,
+        best,
+        attempts,
+        stars,
+        skin: selectedSkin,
+        earnproUnlocked
+      });
+    }
+
+    function updateSkinLabels(){
+      const s = skinById(selectedSkin);
+      skinNameEl.textContent = s.name;
+      modalSkinName.textContent = s.name;
+    }
+    function updateStarsUI(){
+      starsEl.textContent = String(stars);
+      storeStars.textContent = String(stars);
+    }
+
+    function renderStore(){
+      updateStarsUI();
+      storeGrid.innerHTML = SKINS.map(s => {
+        const unlocked = stars >= s.cost;
+        const active = selectedSkin === s.id;
+        const btnText = active ? 'Selected' : (unlocked ? 'Select' : `Locked (${s.cost})`);
+        const btnClass = active ? 'skin-btn primary' : (unlocked ? 'skin-btn' : 'skin-btn locked');
+        return `
+          <div class="skin">
+            <div class="skin-left">
+              <div class="swatch">${s.emoji}</div>
+              <div class="skin-meta">
+                <b>${s.name}</b>
+                <span>${unlocked ? 'Unlocked' : `Unlock at ${s.cost} Stars`}</span>
+              </div>
+            </div>
+            <button class="${btnClass}" data-skin="${s.id}" ${unlocked ? '' : 'disabled'}>${btnText}</button>
+          </div>
+        `;
+      }).join('');
+
+      storeGrid.querySelectorAll('button[data-skin]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-skin');
+          const s = skinById(id);
+          if (stars < s.cost) return;
+          selectedSkin = id;
+          updateSkinLabels();
+          persist();
+          renderStore();
+          beep(740, 0.04, 'sine', 0.03);
+          vibrate(15);
+        });
+      });
+    }
+
+    // -------------------------
+    // Game state
+    // -------------------------
+    let running = false;
+    let paused = false;
+    let startedOnce = false;
+
+    let score = 0;
+    let best = Number(saved.best || 0);
+    let attempts = Number(saved.attempts || 0);
+    let pipesPassed = 0;
+
+    bestEl.textContent = best;
+    attemptsEl.textContent = attempts;
+    pipesPassedEl.textContent = pipesPassed;
+    updateStarsUI();
+    updateSkinLabels();
+
+    const WORLD = {
+      g: 0.58,
+      flap: -9.8,
+      speedBase: 3.2,
+      speed: 3.2,
+      pipeW: 78,
+      gap: 160,
+      spawnEvery: 1300,
+      groundH: 70,
+      curveStep: 0.06,
+      curveMax: 1.6,
+    };
+
+    const bird = { x: 220, y: canvas.height * 0.46, r: 16, vy: 0, tilt: 0 };
+    let pipes = [];
+    let lastSpawn = 0;
+    let lastTs = 0;
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && running && !paused){
+        paused = true;
+        pauseBtn.textContent = '▶️ Resume';
+        overlay.style.display = 'flex';
+        overlayTitle.textContent = 'Paused';
+        overlaySubtitle.textContent = 'Come back when you’re ready.';
+      }
+    });
+
+    function applyDifficulty(){
+      if (settings.practice){
+        WORLD.speedBase = 2.7; WORLD.gap = 178; WORLD.flap = -9.4; WORLD.spawnEvery = 1450; WORLD.g = 0.56;
+      } else if (settings.hard){
+        WORLD.speedBase = 3.9; WORLD.gap = 138; WORLD.flap = -10.1; WORLD.spawnEvery = 1220; WORLD.g = 0.62;
+      } else {
+        WORLD.speedBase = 3.2; WORLD.gap = 160; WORLD.flap = -9.8; WORLD.spawnEvery = 1300; WORLD.g = 0.58;
+      }
+      WORLD.speed = WORLD.speedBase;
+      updateSpeedUI();
+    }
+
+    function speedMultiplier(){
+      if (!settings.curve || settings.practice) return 1.0;
+      return 1.0 + Math.min(score * WORLD.curveStep, WORLD.curveMax - 1.0);
+    }
+    function updateSpeedUI(){
+      const mult = WORLD.speed / WORLD.speedBase;
+      speedEl.textContent = mult.toFixed(1) + 'x';
+    }
+
+    function resetGame(showOverlay=true){
+      applyDifficulty();
+      running = false; paused = false;
+      score = 0; pipesPassed = 0;
+      bird.y = canvas.height * 0.46; bird.vy = 0; bird.tilt = 0;
+      pipes = []; lastSpawn = 0; lastTs = 0;
+
+      scoreEl.textContent = '0';
+      pipesPassedEl.textContent = '0';
+      updateSpeedUI();
+
+      if (showOverlay){
+        overlay.style.display = 'flex';
+        overlayTitle.textContent = startedOnce ? 'Tap to restart' : 'Tap to start';
+        overlaySubtitle.textContent = 'Click / tap / Space to boost. Avoid pipes & ground.';
+      } else overlay.style.display = 'none';
+
+      pauseBtn.textContent = '⏸️ Pause';
+    }
+
+    function startRun(){
+      if (running) return;
+      running = true; paused = false; startedOnce = true;
+      overlay.style.display = 'none';
+
+      attempts++;
+      attemptsEl.textContent = attempts;
+      persist();
+      beep(520, 0.05, 'sine', 0.03);
+      vibrate(20);
+
+      requestAnimationFrame(loop);
+    }
+
+    function togglePause(){
+      if (!running) return;
+      paused = !paused;
+      pauseBtn.textContent = paused ? '▶️ Resume' : '⏸️ Pause';
+      if (paused){
+        overlay.style.display = 'flex';
+        overlayTitle.textContent = 'Paused';
+        overlaySubtitle.textContent = 'Tap Resume to continue.';
+      } else {
+        overlay.style.display = 'none';
+        lastTs = 0;
+        requestAnimationFrame(loop);
+      }
+    }
+
+    function flap(){
+      if (!running) startRun();
+      if (paused) return;
+      bird.vy = WORLD.flap;
+      beep(760, 0.03, 'square', 0.02);
+      vibrate(10);
+    }
+
+    function spawnPipe(){
+      const groundY = canvas.height - WORLD.groundH;
+      const topMin = 44;
+      const topMax = groundY - WORLD.gap - 44;
+      const topH = Math.floor(topMin + Math.random() * Math.max(10, (topMax - topMin)));
+      pipes.push({ x: canvas.width + 28, topH, passed: false });
+    }
+
+    function rectCircleCollide(rx, ry, rw, rh, cx, cy, cr){
+      const nx = Math.max(rx, Math.min(cx, rx + rw));
+      const ny = Math.max(ry, Math.min(cy, ry + rh));
+      const dx = cx - nx;
+      const dy = cy - ny;
+      return (dx*dx + dy*dy) <= cr*cr;
+    }
+
+    function addStarsForScore(newScore){
+      let gained = 0;
+      if (newScore % 2 === 0) gained += 1;
+      if (newScore === 10) gained += 3;
+      if (newScore === 20) gained += 5;
+      if (newScore === 35) gained += 8;
+      if (newScore === 50) gained += 12;
+
+      if (gained > 0){
+        stars += gained;
+        updateStarsUI();
+        renderStore();
+        persist();
+      }
+    }
+
+    function die(){
+      running = false;
+      overlay.style.display = 'flex';
+      overlayTitle.textContent = 'Game Over';
+      overlaySubtitle.textContent = 'Tap Play / Restart to try again.';
+
+      beep(220, 0.12, 'sawtooth', 0.03);
+      vibrate(60);
+
+      if (score > best){
+        best = score;
+        bestEl.textContent = best;
+      }
+      persist();
+    }
+
+    function drawBackground(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const starOffset = (score * 7) % canvas.width;
+
+      ctx.globalAlpha = 0.22;
+      for (let i=0;i<55;i++){
+        const x = (i*73 + starOffset) % canvas.width;
+        const y = (i*137) % (canvas.height - WORLD.groundH);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x, y, 2, 2);
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.26)';
+      ctx.fillRect(0, canvas.height - WORLD.groundH, canvas.width, WORLD.groundH);
+
+      ctx.globalAlpha = 0.22;
+      for (let x=0; x<canvas.width; x+=34){
+        ctx.fillStyle = 'rgba(255,255,255,0.14)';
+        ctx.fillRect(x, canvas.height - WORLD.groundH + 20, 18, 6);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawPipes(){
+      const pipeColor = settings.gfx === 'neon' ? 'rgba(59,130,246,0.95)' : 'rgba(16,185,129,0.92)';
+      const pipeEdge  = settings.gfx === 'neon' ? 'rgba(59,130,246,0.32)' : 'rgba(16,185,129,0.28)';
+
+      for (const p of pipes){
+        ctx.fillStyle = pipeColor;
+        ctx.fillRect(p.x, 0, WORLD.pipeW, p.topH);
+
+        const bottomY = p.topH + WORLD.gap;
+        const bottomH = (canvas.height - WORLD.groundH) - bottomY;
+        ctx.fillRect(p.x, bottomY, WORLD.pipeW, bottomH);
+
+        ctx.strokeStyle = pipeEdge;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(p.x+1, 1, WORLD.pipeW-2, p.topH-2);
+        ctx.strokeRect(p.x+1, bottomY+1, WORLD.pipeW-2, bottomH-2);
+
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(p.x, p.topH-8, WORLD.pipeW, 8);
+        ctx.fillRect(p.x, bottomY, WORLD.pipeW, 8);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawBird(){
+      bird.tilt = Math.max(-0.6, Math.min(0.8, bird.vy / 12));
+      const skin = skinById(selectedSkin);
+      const body = skin.bird.body;
+      const beak = skin.bird.beak;
+      const outline = 'rgba(0,0,0,0.22)';
+
+      ctx.save();
+      ctx.translate(bird.x, bird.y);
+      ctx.rotate(bird.tilt);
+
+      ctx.beginPath();
+      ctx.fillStyle = body;
+      ctx.arc(0, 0, bird.r, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.18;
+      ctx.beginPath();
+      ctx.fillStyle = '#000';
+      ctx.ellipse(-6, 6, 11, 7, 0.2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.beginPath();
+      ctx.fillStyle = '#0b102a';
+      ctx.arc(6, -4, 3, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.fillStyle = beak;
+      ctx.moveTo(bird.r, 0);
+      ctx.lineTo(bird.r + 12, -5);
+      ctx.lineTo(bird.r + 12, 5);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function loop(ts){
+      if (!running || paused) return;
+
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(34, ts - lastTs);
+      lastTs = ts;
+
+      if (!lastSpawn) lastSpawn = ts;
+      if (ts - lastSpawn >= WORLD.spawnEvery){
+        spawnPipe();
+        lastSpawn = ts;
+      }
+
+      WORLD.speed = WORLD.speedBase * speedMultiplier();
+      updateSpeedUI();
+
+      const scale = dt / 16.67;
+      bird.vy += WORLD.g * scale;
+      bird.y += bird.vy * scale;
+
+      const sp = WORLD.speed * scale;
+
+      for (const p of pipes){
+        p.x -= sp;
+        if (!p.passed && p.x + WORLD.pipeW < bird.x){
+          p.passed = true;
+          score++;
+          pipesPassed++;
+
+          scoreEl.textContent = String(score);
+          pipesPassedEl.textContent = String(pipesPassed);
+
+          addStarsForScore(score);
+
+          beep(980, 0.03, 'sine', 0.025);
+          vibrate(8);
+        }
+      }
+      pipes = pipes.filter(p => p.x + WORLD.pipeW > -60);
+
+      const groundY = canvas.height - WORLD.groundH;
+      if (bird.y + bird.r >= groundY) return die();
+      if (bird.y - bird.r <= 0) return die();
+
+      for (const p of pipes){
+        if (rectCircleCollide(p.x, 0, WORLD.pipeW, p.topH, bird.x, bird.y, bird.r)) return die();
+        const bottomY = p.topH + WORLD.gap;
+        const bottomH = groundY - bottomY;
+        if (rectCircleCollide(p.x, bottomY, WORLD.pipeW, bottomH, bird.x, bird.y, bird.r)) return die();
+      }
+
+      drawBackground();
+      drawPipes();
+      drawBird();
+
+      requestAnimationFrame(loop);
+    }
+
+    // -------------------------
+    // Input
+    // -------------------------
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space'){ e.preventDefault(); flap(); }
+      if (e.code === 'KeyP') togglePause();
+      if (e.code === 'KeyR') { resetGame(false); startRun(); }
+    });
+    canvas.addEventListener('pointerdown', () => flap());
+    overlay.addEventListener('pointerdown', () => { if (!running){ resetGame(false); startRun(); } });
+
+    playBtn.addEventListener('click', () => { resetGame(false); startRun(); });
+    pauseBtn.addEventListener('click', () => togglePause());
+
+    soundChip.addEventListener('click', () => {
+      settings.sound = !settings.sound;
+      soundChip.classList.toggle('on', settings.sound);
+      persist();
+      if (settings.sound) beep(660, 0.04, 'sine', 0.03);
+    });
+    hapticsChip.addEventListener('click', () => {
+      settings.haptics = !settings.haptics;
+      hapticsChip.classList.toggle('on', settings.haptics);
+      persist();
+      vibrate(20);
+    });
+    practiceChip.addEventListener('click', () => {
+      settings.practice = !settings.practice;
+      practiceChip.classList.toggle('on', settings.practice);
+      applyDifficulty();
+      persist();
+      modeLabelEl.textContent = settings.practice ? 'Practice' : (settings.hard ? 'Hard' : 'Normal');
+      if (running){
+        running = false; paused = false;
+        overlay.style.display = 'flex';
+        overlayTitle.textContent = 'Mode changed';
+        overlaySubtitle.textContent = 'Tap Play / Restart to continue.';
+      }
+    });
+
+    // -------------------------
+    // Settings modal + tabs
+    // -------------------------
+    function openSettings(){ settingsModal.classList.add('show'); }
+    function closeSettingsModal(){ settingsModal.classList.remove('show'); }
+
+    settingsBtn.addEventListener('click', openSettings);
+    closeSettings.addEventListener('click', closeSettingsModal);
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettingsModal(); });
+
+    function setTab(tab){
+      tabs.forEach(x => x.classList.remove('active'));
+      tabs.find(x => x.dataset.tab === tab)?.classList.add('active');
+      Object.entries(sections).forEach(([k, el]) => el.classList.toggle('active', k === tab));
+      if (tab === 'store') renderStore();
+    }
+    tabs.forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
+
+    openStoreBtn.addEventListener('click', () => setTab('store'));
+
+    hardToggle.addEventListener('click', () => {
+      settings.hard = !settings.hard;
+      hardToggle.classList.toggle('on', settings.hard);
+      hardToggle.setAttribute('aria-checked', settings.hard ? 'true' : 'false');
+      applyDifficulty();
+      persist();
+      modeLabelEl.textContent = settings.practice ? 'Practice' : (settings.hard ? 'Hard' : 'Normal');
+      if (running){
+        running = false; paused = false;
+        overlay.style.display = 'flex';
+        overlayTitle.textContent = 'Mode changed';
+        overlaySubtitle.textContent = 'Tap Play / Restart to continue.';
+      }
+    });
+
+    curveToggle.addEventListener('click', () => {
+      settings.curve = !settings.curve;
+      curveToggle.classList.toggle('on', settings.curve);
+      curveToggle.setAttribute('aria-checked', settings.curve ? 'true' : 'false');
+      persist();
+    });
+
+    gfxSelect.addEventListener('change', () => {
+      settings.gfx = gfxSelect.value;
+      persist();
+    });
+
+    // ✅ 5 taps on More unlocks the hidden option
+    moreTabBtn.addEventListener('click', handleMoreTap);
+
+    // Link
+    earnproBtn.addEventListener('click', () => { window.location.href = "earnpro.html"; });
+
+    // -------------------------
+    // Init
+    // -------------------------
+    function syncUI(){
+      bestEl.textContent = best;
+      attemptsEl.textContent = attempts;
+      updateStarsUI();
+      updateSkinLabels();
+
+      hardToggle.classList.toggle('on', settings.hard);
+      curveToggle.classList.toggle('on', settings.curve);
+      gfxSelect.value = settings.gfx;
+
+      soundChip.classList.toggle('on', settings.sound);
+      hapticsChip.classList.toggle('on', settings.haptics);
+      practiceChip.classList.toggle('on', settings.practice);
+
+      modeLabelEl.textContent = settings.practice ? 'Practice' : (settings.hard ? 'Hard' : 'Normal');
+
+      if (earnproUnlocked) earnproBox.classList.remove('earnpro-hidden');
+      else earnproBox.classList.add('earnpro-hidden');
+    }
+
+    syncUI();
+    resetGame(true);
+    renderStore();
+  </script>
+</body>
+</html>
